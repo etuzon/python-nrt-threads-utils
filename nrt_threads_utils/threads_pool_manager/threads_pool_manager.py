@@ -1,145 +1,30 @@
-from abc import abstractmethod
-from enum import Enum
+import copy
 from threading import Lock, Thread
 from typing import Optional
 
 from time import sleep
 from nrt_collections_utils.list_utils import ListUtil
-from nrt_time_utils.time_utils import TimeUtil
 
-
-class FullQueueException(Exception):
-    pass
-
-
-class QueuePlacementEnum(Enum):
-    STRICT_PRIORITY = 1
-    AVOID_STARVATION_PRIORITY = 2
-
-
-class TaskStateEnum(Enum):
-    QUEUE = 1
-    EXECUTORS_POOL = 2
-    EXECUTED = 3
-
-
-class TaskBase:
-    _start_date_ms: int
-    _task_state: TaskStateEnum
-
-    def __init__(self):
-        self._start_date_ms = 0
-        self._task_state = TaskStateEnum.QUEUE
-
-    @property
-    def alive_date_ms(self) -> int:
-        if self.start_date_ms:
-            return TimeUtil.get_current_date_ms() - self.start_date_ms
-
-        return 0
-
-    @property
-    def start_date_ms(self) -> int:
-        return self._start_date_ms
-
-    @start_date_ms.setter
-    def start_date_ms(self, date_ms: int):
-        self._start_date_ms = date_ms
-
-    @property
-    def task_state(self) -> TaskStateEnum:
-        return self._task_state
-
-    @task_state.setter
-    def task_state(self, task_state: TaskStateEnum):
-        self._task_state = task_state
-
-    @abstractmethod
-    def execute(self):
-        pass
-
-
-class ThreadTask(TaskBase):
-    __task: Thread
-
-    def __init__(self, task: Thread):
-        super().__init__()
-
-        self.__task = task
-
-    def execute(self):
-        self.__task.start()
-        self.__task.join()
-
-    @property
-    def task_instance(self) -> Thread:
-        return self.__task
-
-
-class MethodTask(TaskBase):
-    __task: callable
-    __args: tuple
-    __kwargs: dict
-
-    def __init__(self, task: callable, *args, **kwargs):
-        super().__init__()
-
-        self.__task = task
-        self.__args = args
-        self.__kwargs = kwargs
-
-    def execute(self):
-        self.__task(*self.__args, **self.__kwargs)
-
-
-class TaskExecutor(Thread):
-    __task: TaskBase
-    __priority: int
-    __avoid_starvation_flag: bool = False
-    __task_id: Optional[str] = None
-
-    def __init__(
-            self,
-            task: TaskBase,
-            task_id: Optional[str] = None,
-            priority: int = 1):
-
-        super().__init__()
-
-        self.__task = task
-        self.__task_id = task_id
-        self.__priority = priority
-
-    def run(self):
-        self.__task.start_date_ms = TimeUtil.get_current_date_ms()
-        self.__task.execute()
-
-    @property
-    def avoid_starvation_flag(self) -> bool:
-        return self.__avoid_starvation_flag
-
-    @avoid_starvation_flag.setter
-    def avoid_starvation_flag(self, flag: bool):
-        self.__avoid_starvation_flag = flag
-
-    @property
-    def priority(self) -> int:
-        return self.__priority
-
-    @property
-    def task(self) -> TaskBase:
-        return self.__task
-
-    @property
-    def task_id(self) -> Optional[str]:
-        return self.__task_id
+from nrt_threads_utils.threads_pool_manager.enums import TaskStateEnum, \
+    QueuePlacementEnum, TaskTypeEnum
+from nrt_threads_utils.threads_pool_manager.threads_pool_manager_exceptions import \
+    FullQueueException
+from nrt_threads_utils.threads_pool_manager.metrics import ThreadsPoolManagerMetrics
+from nrt_threads_utils.threads_pool_manager.tasks import TaskExecutor, TaskBase
 
 
 class ThreadsPoolManager(Thread):
+    MAX_FINISHED_TASKS_LIST_SIZE = 100
     AVOID_STARVATION_AMOUNT = 10
 
-    __lock: Lock
-    __queue: list
+    __threads_lock: Lock
+    __metrics_lock: Lock
+    __finished_tasks_lock: Lock
+
+    __queue: list[TaskExecutor]
+    __finished_tasks: list[TaskExecutor]
+
+    __max_finished_tasks_list_size: int = MAX_FINISHED_TASKS_LIST_SIZE
     __max_executors_pool_size: int
     __max_queue_size: int = 0
     __max_executors_extension_pool_size: int = 0
@@ -151,6 +36,8 @@ class ThreadsPoolManager(Thread):
     __avoid_starvation_amount: int = AVOID_STARVATION_AMOUNT
     __avoid_starvation_counter: int = 0
 
+    __metrics: ThreadsPoolManagerMetrics
+
     __is_shutdown: bool = False
 
     __executors_pool: list
@@ -158,10 +45,14 @@ class ThreadsPoolManager(Thread):
     def __init__(self, executors_pool_size: int = 1):
         super().__init__()
 
-        self.__lock = Lock()
+        self.__threads_lock = Lock()
+        self.__metrics_lock = Lock()
+        self.__finished_tasks_lock = Lock()
         self.__queue = []
+        self.__finished_tasks = []
         self.__max_executors_pool_size = executors_pool_size
         self.__executors_pool = []
+        self.__metrics = ThreadsPoolManagerMetrics()
 
     def add_task(
             self,
@@ -170,13 +61,9 @@ class ThreadsPoolManager(Thread):
             priority: int = 1,
             queue_placement: QueuePlacementEnum = QueuePlacementEnum.STRICT_PRIORITY):
 
-        task_executor = \
-            TaskExecutor(
-                task=task,
-                task_id=task_id,
-                priority=priority)
+        task_executor = TaskExecutor(task=task, task_id=task_id, priority=priority)
 
-        with self.__lock:
+        with self.__threads_lock:
             self.__verify_queue_size()
 
             if queue_placement == QueuePlacementEnum.STRICT_PRIORITY:
@@ -186,8 +73,10 @@ class ThreadsPoolManager(Thread):
             else:
                 raise NotImplementedError('Queue placement not implemented')
 
+            self.__update_max_queue_size_metrics()
+
     def get_task(self, task_id: str) -> Optional[TaskBase]:
-        with self.__lock:
+        with self.__threads_lock:
             for task_executor in self.__executors_pool:
                 if task_executor.task_id == task_id:
                     return task_executor.task
@@ -200,11 +89,16 @@ class ThreadsPoolManager(Thread):
 
     def run(self):
         while not self.__is_shutdown:
+            self.__update_execution_metrics()
             is_execute = self.__get_next_task_from_queue_to_executors_pool()
             is_remove = self.__remove_dead_tasks_from_executors_pool()
 
             if not is_execute and not is_remove:
                 sleep(.05)
+
+    def reset_metrics(self):
+        with self.__metrics_lock:
+            self.__metrics = ThreadsPoolManagerMetrics()
 
     def shutdown(self):
         self.__is_shutdown = True
@@ -242,6 +136,13 @@ class ThreadsPoolManager(Thread):
         self.__executors_timeout_ms = timeout_ms
 
     @property
+    def finished_tasks(self) -> list[TaskExecutor]:
+        with self.__finished_tasks_lock:
+            finished_tasks = self.__finished_tasks.copy()
+            self.__finished_tasks = []
+            return finished_tasks
+
+    @property
     def max_executors_extension_pool_size(self) -> int:
         return self.__max_executors_extension_pool_size
 
@@ -258,12 +159,25 @@ class ThreadsPoolManager(Thread):
         self.__max_executors_pool_size = size
 
     @property
+    def max_finished_tasks_list_size(self) -> int:
+        return self.__max_finished_tasks_list_size
+
+    @max_finished_tasks_list_size.setter
+    def max_finished_tasks_list_size(self, size: int):
+        self.__max_finished_tasks_list_size = size
+
+    @property
     def max_queue_size(self) -> int:
         return self.__max_queue_size
 
     @max_queue_size.setter
     def max_queue_size(self, size: int):
         self.__max_queue_size = size
+
+    @property
+    def metrics(self) -> ThreadsPoolManagerMetrics:
+        with self.__metrics_lock:
+            return copy.deepcopy(self.__metrics)
 
     @property
     def name(self) -> Optional[str]:
@@ -274,13 +188,13 @@ class ThreadsPoolManager(Thread):
         self.__name = name
 
     @property
-    def queue(self) -> list:
-        with self.__lock:
+    def queue(self) -> list[TaskExecutor]:
+        with self.__threads_lock:
             return self.__queue.copy()
 
     @property
     def queue_size(self) -> int:
-        with self.__lock:
+        with self.__threads_lock:
             return len(self.__queue)
 
     def __verify_queue_size(self):
@@ -308,6 +222,7 @@ class ThreadsPoolManager(Thread):
                 and self.__is_executor_timeout() and self.queue_size:
 
             self.__executors_extension_pool_size += 1
+
             return True
 
         return False
@@ -324,7 +239,14 @@ class ThreadsPoolManager(Thread):
 
         for i in range(len(self.__executors_pool)):
             if not self.__executors_pool[i].is_alive():
+
+                self.__update_executed_tasks_counter_metrics(
+                    self.__executors_pool[i].priority,
+                    self.__executors_pool[i].task_type)
+
                 self.__executors_pool[i].task.task_state = TaskStateEnum.EXECUTED
+                self.__add_task_executor_to_finished_tasks(self.__executors_pool[i])
+
                 self.__executors_pool[i] = None
 
                 if self.__executors_extension_pool_size > 0:
@@ -336,8 +258,15 @@ class ThreadsPoolManager(Thread):
 
         return is_removed
 
+    def __add_task_executor_to_finished_tasks(self, task_executor: TaskExecutor):
+        with self.__finished_tasks_lock:
+            if len(self.__finished_tasks) >= self.max_finished_tasks_list_size:
+                self.__finished_tasks.pop(0)
+
+            self.__finished_tasks.append(task_executor)
+
     def __get_next_task_executor(self):
-        with self.__lock:
+        with self.__threads_lock:
             if len(self.__queue) > 0:
                 task_executor = self.__queue.pop(0)
                 return task_executor
@@ -381,5 +310,50 @@ class ThreadsPoolManager(Thread):
             self, task_executor: TaskExecutor):
 
         task_executor.avoid_starvation_flag = True
+        self.__update_avoid_starvation_counter_metrics()
         self.__avoid_starvation_counter = 0
         self.__queue.append(task_executor)
+
+    def __update_execution_metrics(self):
+        with self.__metrics_lock:
+            for task_executor in self.__executors_pool:
+                if task_executor.task.alive_date_ms \
+                        > self.__metrics.max_execution_date_ms:
+                    self.__metrics.max_execution_date_ms = \
+                        task_executor.task.alive_date_ms
+
+    def __update_max_queue_size_metrics(self):
+        with self.__metrics_lock:
+            if len(self.__queue) > self.__metrics.max_queue_size:
+                self.__metrics.max_queue_size = len(self.__queue)
+
+    def __update_executed_tasks_counter_metrics(
+            self, priority: int, task_type: TaskTypeEnum):
+
+        with self.__metrics_lock:
+            self.__metrics.executed_tasks_counter += 1
+
+            if priority not in self.__metrics.tasks_priority_counter_dict:
+                self.__metrics.tasks_priority_counter_dict[priority] = 1
+            else:
+                self.__metrics.tasks_priority_counter_dict[priority] += 1
+
+            if task_type == TaskTypeEnum.METHOD:
+                self.__metrics.executed_methods_counter += 1
+
+                if priority not in self.__metrics.method_tasks_counter_dict:
+                    self.__metrics.method_tasks_counter_dict[priority] = 1
+                else:
+                    self.__metrics.method_tasks_counter_dict[priority] += 1
+
+            if task_type == TaskTypeEnum.THREAD:
+                self.__metrics.executed_threads_counter += 1
+
+                if priority not in self.__metrics.thread_tasks_counter_dict:
+                    self.__metrics.thread_tasks_counter_dict[priority] = 1
+                else:
+                    self.__metrics.thread_tasks_counter_dict[priority] += 1
+
+    def __update_avoid_starvation_counter_metrics(self):
+        with self.__metrics_lock:
+            self.__metrics.avoid_starvation_counter += 1
