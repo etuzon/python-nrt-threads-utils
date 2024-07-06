@@ -1,5 +1,9 @@
 # Threads Utilities
 
+## Version 2.0.1
+
+Fix minor bugs.
+
 ## Version 2.0.0
 
 - Add metrics.
