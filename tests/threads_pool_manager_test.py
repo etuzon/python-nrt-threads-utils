@@ -10,7 +10,8 @@ from nrt_threads_utils.threads_pool_manager.enums import \
 from nrt_threads_utils.threads_pool_manager.threads_pool_manager_exceptions import \
     FullQueueException
 from nrt_threads_utils.threads_pool_manager.tasks import ThreadTask, MethodTask
-from nrt_threads_utils.threads_pool_manager.threads_pool_manager import ThreadsPoolManager
+from nrt_threads_utils.threads_pool_manager.threads_pool_manager import \
+    ThreadsPoolManager
 
 
 SLEEP_10 = 10

@@ -198,9 +198,8 @@ class ThreadsPoolManager(Thread):
             return len(self.__queue)
 
     def __verify_queue_size(self):
-        if self.__max_queue_size > 0:
-            if len(self.__queue) >= self.__max_queue_size:
-                raise FullQueueException(f'Queue size: {len(self.__queue)}')
+        if len(self.__queue) >= self.__max_queue_size > 0:
+            raise FullQueueException(f'Queue size: {len(self.__queue)}')
 
     def __get_next_task_from_queue_to_executors_pool(self) -> bool:
         if len(self.__executors_pool) < self.max_executors_pool_size \
@@ -228,11 +227,8 @@ class ThreadsPoolManager(Thread):
         return False
 
     def __is_executor_timeout(self):
-        for task_executor in self.__executors_pool:
-            if task_executor.task.alive_date_ms > self.executors_timeout_ms:
-                return True
-
-        return False
+        return any(task_executor.task.alive_date_ms > self.executors_timeout_ms
+                   for task_executor in self.__executors_pool)
 
     def __remove_dead_tasks_from_executors_pool(self):
         is_removed = False
