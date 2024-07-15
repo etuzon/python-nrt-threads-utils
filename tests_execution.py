@@ -19,6 +19,9 @@ def __replace_pyproject_packages():
 
     for i, line in enumerate(file_lines):
         if line.startswith('packages'):
+            if 'tests' in packages:
+                packages.remove('tests')
+
             file_lines[i] = f"packages={packages}"
             is_replace = True
             break

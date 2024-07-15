@@ -12,7 +12,10 @@ with open(os.path.join(PATH, 'README.md')) as f:
     readme = f.read()
 
 packages = find_packages()
-packages.remove('tests')
+
+if 'tests' in packages:
+    packages.remove('tests')
+
 
 setup(
     name='nrt-threads-utils',
