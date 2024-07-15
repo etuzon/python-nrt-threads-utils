@@ -1,5 +1,5 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 import nrt_threads_utils
 
@@ -10,6 +10,9 @@ with open(os.path.join(PATH, 'requirements.txt')) as f:
 
 with open(os.path.join(PATH, 'README.md')) as f:
     readme = f.read()
+
+packages = find_packages()
+packages.remove('tests')
 
 setup(
     name='nrt-threads-utils',
@@ -23,7 +26,7 @@ setup(
     long_description_content_type='text/markdown',
     long_description=readme,
     url='https://github.com/etuzon/python-nrt-threads-utils',
-    packages=['nrt_threads_utils'],
+    packages=find_packages(),
     classifiers=[
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.8',

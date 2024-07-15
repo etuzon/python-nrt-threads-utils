@@ -1,5 +1,9 @@
 # Threads Utilities
 
+## Version 2.0.2
+
+Fix installation issue.
+
 ## Version 2.0.1
 
 Fix minor bugs.
