@@ -1,10 +1,6 @@
-from threading import Thread
-
 import pytest
 from time import sleep
-
 from nrt_time_utils.time_utils import TimeUtil, MINUTE_MS, SECOND_MS
-
 from nrt_threads_utils.threads_pool_manager.enums import \
     QueuePlacementEnum, TaskStateEnum
 from nrt_threads_utils.threads_pool_manager.threads_pool_manager_exceptions import \
@@ -12,6 +8,8 @@ from nrt_threads_utils.threads_pool_manager.threads_pool_manager_exceptions impo
 from nrt_threads_utils.threads_pool_manager.tasks import ThreadTask, MethodTask
 from nrt_threads_utils.threads_pool_manager.threads_pool_manager import \
     ThreadsPoolManager
+from tests.threads_pool_manager.threads_pool_manager_test_base import \
+    SleepSecPriorityThreadBase
 
 
 SLEEP_10 = 10
@@ -33,24 +31,6 @@ def sleep_1_sec_and_raise_value_error():
 
 def sleep_11_sec():
     sleep(11)
-
-
-class SleepSecPriorityThreadBase(Thread):
-    __sleep_sec: int
-    __priority: int
-
-    def __init__(self, sleep_sec: int, priority: int):
-        super().__init__()
-
-        self.__sleep_sec = sleep_sec
-        self.__priority = priority
-
-    def run(self):
-        sleep(self.__sleep_sec)
-
-    @property
-    def priority(self):
-        return self.__priority
 
 
 class Sleep30SecPriority1Thread(SleepSecPriorityThreadBase):
@@ -374,6 +354,7 @@ def test_avoid_starvation_priority():
         assert threads_pool_manager.active_tasks_amount == 0
 
         assert threads_pool_manager.get_task('t_1') is None
+        assert not threads_pool_manager.is_task_exists('t_1')
 
         assert threads_pool_manager.metrics.avoid_starvation_counter == 1
         assert threads_pool_manager.metrics.tasks_priority_counter_dict == \
@@ -419,6 +400,9 @@ def test_task_base_properties():
 
         t_1 = threads_pool_manager.get_task('t_1')
         t_2 = threads_pool_manager.get_task('t_2')
+
+        threads_pool_manager.is_task_exists('t_1')
+        threads_pool_manager.is_task_exists('t_2')
 
         assert t_1.start_date_ms > 0
         assert t_2.start_date_ms == 0
