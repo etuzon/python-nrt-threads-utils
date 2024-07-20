@@ -1,5 +1,11 @@
 # Threads Utilities
 
+## Version 2.0.4
+
+- Fix bugs.
+- Enhance performance.
+- Add method to ThreadPoolManager.
+
 ## Version 2.0.2
 
 Fix installation issue.
