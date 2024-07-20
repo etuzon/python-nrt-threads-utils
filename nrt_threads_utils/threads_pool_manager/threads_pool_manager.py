@@ -42,6 +42,8 @@ class ThreadsPoolManager(Thread):
 
     __executors_pool: list
 
+    __temp_tasks_ids: list[str]
+
     def __init__(self, executors_pool_size: int = 1):
         super().__init__()
 
@@ -53,6 +55,7 @@ class ThreadsPoolManager(Thread):
         self.__max_executors_pool_size = executors_pool_size
         self.__executors_pool = []
         self.__metrics = ThreadsPoolManagerMetrics()
+        self.__temp_tasks_ids = []
 
     def add_task(
             self,
@@ -77,15 +80,25 @@ class ThreadsPoolManager(Thread):
 
     def get_task(self, task_id: str) -> Optional[TaskBase]:
         with self.__threads_lock:
-            for task_executor in self.__executors_pool:
-                if task_executor.task_id == task_id:
-                    return task_executor.task
+            is_next_try = True
 
-            for task_executor in self.__queue:
-                if task_executor.task_id == task_id:
-                    return task_executor.task
+            while is_next_try:
+                if task_id not in self.__temp_tasks_ids:
+                    is_next_try = False
+
+                for te in self.__executors_pool:
+                    # te can be None until it will be removed from executors pool
+                    if te and te.task_id == task_id:
+                        return te.task
+
+                for te in self.__queue:
+                    if te.task_id == task_id:
+                        return te.task
 
         return None
+
+    def is_task_exists(self, task_id: str) -> bool:
+        return self.get_task(task_id) is not None
 
     def run(self):
         while not self.__is_shutdown:
@@ -137,6 +150,7 @@ class ThreadsPoolManager(Thread):
 
     @property
     def finished_tasks(self) -> list[TaskExecutor]:
+        # lock is needed because there is a method that pop finished tasks
         with self.__finished_tasks_lock:
             finished_tasks = self.__finished_tasks.copy()
             self.__finished_tasks = []
@@ -189,17 +203,15 @@ class ThreadsPoolManager(Thread):
 
     @property
     def queue(self) -> list[TaskExecutor]:
-        with self.__threads_lock:
-            return self.__queue.copy()
+        return self.__queue.copy()
 
     @property
     def queue_size(self) -> int:
-        with self.__threads_lock:
-            return len(self.__queue)
+        return len(self.__queue)
 
     def __verify_queue_size(self):
-        if len(self.__queue) >= self.__max_queue_size > 0:
-            raise FullQueueException(f'Queue size: {len(self.__queue)}')
+        if self.queue_size >= self.max_queue_size > 0:
+            raise FullQueueException(f'Queue size: {self.queue_size}')
 
     def __get_next_task_from_queue_to_executors_pool(self) -> bool:
         if len(self.__executors_pool) < self.max_executors_pool_size \
@@ -211,6 +223,10 @@ class ThreadsPoolManager(Thread):
                 task_executor.task.task_state = TaskStateEnum.EXECUTORS_POOL
                 task_executor.start()
                 self.__executors_pool.append(task_executor)
+
+                if task_executor.task_id:
+                    self.__temp_tasks_ids.remove(task_executor.task_id)
+
                 return True
 
         return False
@@ -227,8 +243,8 @@ class ThreadsPoolManager(Thread):
         return False
 
     def __is_executor_timeout(self):
-        return any(task_executor.task.alive_date_ms > self.executors_timeout_ms
-                   for task_executor in self.__executors_pool)
+        return any(te and te.task.alive_date_ms > self.executors_timeout_ms
+                   for te in self.__executors_pool)
 
     def __remove_dead_tasks_from_executors_pool(self):
         is_removed = False
@@ -263,8 +279,14 @@ class ThreadsPoolManager(Thread):
 
     def __get_next_task_executor(self):
         with self.__threads_lock:
-            if len(self.__queue) > 0:
+            if self.queue_size > 0:
+                task_id = self.__queue[0].task_id
+
+                if task_id:
+                    self.__temp_tasks_ids.append(task_id)
+
                 task_executor = self.__queue.pop(0)
+
                 return task_executor
 
         return None
@@ -312,15 +334,14 @@ class ThreadsPoolManager(Thread):
 
     def __update_execution_metrics(self):
         with self.__metrics_lock:
-            for task_executor in self.__executors_pool:
-                if task_executor.task.alive_date_ms \
-                        > self.__metrics.max_execution_date_ms:
+            for te in self.__executors_pool:
+                if te and te.task.alive_date_ms > self.__metrics.max_execution_date_ms:
                     self.__metrics.max_execution_date_ms = \
-                        task_executor.task.alive_date_ms
+                        te.task.alive_date_ms
 
     def __update_max_queue_size_metrics(self):
         with self.__metrics_lock:
-            if len(self.__queue) > self.__metrics.max_queue_size:
+            if self.queue_size > self.__metrics.max_queue_size:
                 self.__metrics.max_queue_size = len(self.__queue)
 
     def __update_executed_tasks_counter_metrics(
