@@ -36,4 +36,5 @@ dynamic=['dependencies']
 [tool.setuptools]
 
 packages=['nrt_threads_utils', 'performance_tests', 'nrt_threads_utils.threads_pool_manager', 'tests.threads_pool_manager']
+
 py-modules = []
