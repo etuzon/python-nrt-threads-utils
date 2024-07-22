@@ -467,7 +467,7 @@ BRDA:89,7,0,1
 BRDA:92,7,1,1
 BRDA:85,8,0,1
 BRDA:95,8,1,1
-BRDA:94,9,0,-
+BRDA:94,9,0,1
 BRDA:96,9,1,1
 BRDA:0,10,0,1
 BRDA:105,10,1,1
@@ -592,7 +592,7 @@ BRDA:372,67,1,1
 BRDA:0,68,0,1
 BRDA:376,68,1,1
 BRF:140
-BRH:137
+BRH:138
 end_of_record
 TN:
 SF:nrt_threads_utils\threads_pool_manager\threads_pool_manager_exceptions.py

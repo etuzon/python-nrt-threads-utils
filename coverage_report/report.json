@@ -2,7 +2,7 @@
     "meta": {
         "format": 2,
         "version": "7.5.3",
-        "timestamp": "2024-07-21T08:51:22.754610",
+        "timestamp": "2024-07-23T00:12:36.059348",
         "branch_coverage": true,
         "show_contexts": false
     },
@@ -627,14 +627,14 @@
             "summary": {
                 "covered_lines": 246,
                 "num_statements": 247,
-                "percent_covered": 98.96640826873384,
+                "percent_covered": 99.2248062015504,
                 "percent_covered_display": "99",
                 "missing_lines": 1,
                 "excluded_lines": 0,
                 "num_branches": 140,
-                "num_partial_branches": 3,
-                "covered_branches": 137,
-                "missing_branches": 3
+                "num_partial_branches": 2,
+                "covered_branches": 138,
+                "missing_branches": 2
             },
             "missing_lines": [
                 77
@@ -708,6 +708,10 @@
                 [
                     94,
                     95
+                ],
+                [
+                    95,
+                    94
                 ],
                 [
                     95,
@@ -1210,10 +1214,6 @@
                 [
                     86,
                     89
-                ],
-                [
-                    95,
-                    94
                 ]
             ]
         },
@@ -1243,13 +1243,13 @@
     "totals": {
         "covered_lines": 382,
         "num_statements": 385,
-        "percent_covered": 98.76543209876543,
+        "percent_covered": 98.94179894179894,
         "percent_covered_display": "99",
         "missing_lines": 3,
         "excluded_lines": 0,
         "num_branches": 182,
-        "num_partial_branches": 4,
-        "covered_branches": 178,
-        "missing_branches": 4
+        "num_partial_branches": 3,
+        "covered_branches": 179,
+        "missing_branches": 3
     }
 }
