@@ -1,13 +1,11 @@
 import logging
 from time import sleep
-
 from nrt_time_utils.time_utils import TimeUtil, MINUTE_MS
-
 from nrt_threads_utils.threads_pool_manager.enums import QueuePlacementEnum
-from nrt_threads_utils.threads_pool_manager.threads_pool_manager import \
-    ThreadsPoolManager
 from tests.threads_pool_manager.performance.performance_base import AddTasksThread, \
     _wait_and_verify_no_active_tasks
+from nrt_threads_utils.threads_pool_manager.threads_pool_manager import \
+    ThreadsPoolManager
 from tests.threads_pool_manager.threads_pool_manager_test_base import \
     SleepSecPriorityThreadBase
 
@@ -25,9 +23,7 @@ class Sleep20SecPriority2Thread(SleepSecPriorityThreadBase):
 
 
 EXECUTORS_POOL_SIZE = 4000
-
 THREADS_AMOUNT_1 = 30000
-THREADS_AMOUNT_2 = 1800
 
 
 def test_threads_pool_manager_strict_priority_performance():
