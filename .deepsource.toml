@@ -1,10 +1,13 @@
 version = 1
 
+exclude_patterns = [
+  "tests/**"
+]
+
+
 [[analyzers]]
 name = "python"
 
   [analyzers.meta]
+  max_line_length = 90
   runtime_version = "3.x.x"
-
-  [[analyzers.python.config.ignores]]
-  code = "BAN-B101"

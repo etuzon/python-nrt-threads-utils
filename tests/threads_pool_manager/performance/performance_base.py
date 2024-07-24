@@ -89,5 +89,3 @@ class AddTasksThread(Thread):
         assert threads_pool_manager.finished_tasks is not None
         assert threads_pool_manager.metrics is not None
         assert threads_pool_manager.active_tasks_amount >= 0
-
-
