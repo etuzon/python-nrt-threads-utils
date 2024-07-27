@@ -4,7 +4,6 @@ exclude_patterns = [
   "tests/**"
 ]
 
-
 [[analyzers]]
 name = "python"
 

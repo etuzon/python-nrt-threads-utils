@@ -1,5 +1,9 @@
 # Threads Utilities
 
+## Version 2.0.5
+
+Add to `ThreadPoolManager` methods to stop/start executors.
+
 ## Version 2.0.4
 
 - Fix bugs.

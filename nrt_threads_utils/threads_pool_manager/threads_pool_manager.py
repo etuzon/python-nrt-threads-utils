@@ -21,8 +21,12 @@ class ThreadsPoolManager(Thread):
     __metrics_lock: Lock
     __finished_tasks_lock: Lock
 
+    __executors_pool: list
     __queue: list[TaskExecutor]
     __finished_tasks: list[TaskExecutor]
+
+    __is_executors_shutdown: bool = False
+    __is_shutdown: bool = False
 
     __max_finished_tasks_list_size: int = MAX_FINISHED_TASKS_LIST_SIZE
     __max_executors_pool_size: int
@@ -37,10 +41,6 @@ class ThreadsPoolManager(Thread):
     __avoid_starvation_counter: int = 0
 
     __metrics: ThreadsPoolManagerMetrics
-
-    __is_shutdown: bool = False
-
-    __executors_pool: list
 
     __temp_tasks_ids: list[str]
 
@@ -103,7 +103,12 @@ class ThreadsPoolManager(Thread):
     def run(self):
         while not self.__is_shutdown:
             self.__update_execution_metrics()
-            is_execute = self.__get_next_task_from_queue_to_executors_pool()
+
+            if not self.is_executors_shutdown:
+                is_execute = self.__get_next_task_from_queue_to_executors_pool()
+            else:
+                is_execute = False
+
             is_remove = self.__remove_dead_tasks_from_executors_pool()
 
             if not is_execute and not is_remove:
@@ -115,6 +120,12 @@ class ThreadsPoolManager(Thread):
 
     def shutdown(self):
         self.__is_shutdown = True
+
+    def shutdown_executors(self):
+        self.__is_executors_shutdown = True
+
+    def start_executors(self):
+        self.__is_executors_shutdown = False
 
     @property
     def active_tasks_amount(self) -> int:
@@ -155,6 +166,10 @@ class ThreadsPoolManager(Thread):
             finished_tasks = self.__finished_tasks.copy()
             self.__finished_tasks = []
             return finished_tasks
+
+    @property
+    def is_executors_shutdown(self) -> bool:
+        return self.__is_executors_shutdown
 
     @property
     def max_executors_extension_pool_size(self) -> int:
