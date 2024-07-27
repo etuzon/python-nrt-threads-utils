@@ -629,6 +629,69 @@ def __verify_pool_size_is_2(threads_pool_manager: ThreadsPoolManager):
            f'Active tasks amount: {threads_pool_manager.active_tasks_amount}'
 
 
+def test_shutdown_and_start_executors():
+    threads_pool_manager = \
+        ThreadsPoolManager(executors_pool_size=1)
+
+    try:
+        threads_pool_manager.start()
+
+        assert not threads_pool_manager.is_executors_shutdown
+
+
+        t_1 = Sleep30SecPriority1Thread()
+        t_2 = Sleep30SecPriority1Thread()
+        t_3 = Sleep30SecPriority1Thread()
+        t_4 = Sleep30SecPriority1Thread()
+
+        threads_pool_manager.add_task(ThreadTask(t_1))
+
+        sleep(5)
+
+        assert threads_pool_manager.queue_size == 0
+        assert threads_pool_manager.active_tasks_amount == 1
+
+        threads_pool_manager.add_task(ThreadTask(t_2))
+
+        sleep(10)
+
+        assert threads_pool_manager.queue_size == 1
+        assert threads_pool_manager.active_tasks_amount == 1
+
+        threads_pool_manager.shutdown_executors()
+
+        assert threads_pool_manager.is_executors_shutdown
+
+        sleep(20)
+
+        assert threads_pool_manager.queue_size == 1
+        assert threads_pool_manager.active_tasks_amount == 0
+
+        threads_pool_manager.add_task(ThreadTask(t_3))
+        threads_pool_manager.add_task(ThreadTask(t_4))
+
+        sleep(1)
+
+        assert threads_pool_manager.queue_size == 3
+        assert threads_pool_manager.active_tasks_amount == 0
+
+        threads_pool_manager.start_executors()
+        assert not threads_pool_manager.is_executors_shutdown
+
+        sleep(1)
+
+        assert threads_pool_manager.queue_size == 2
+        assert threads_pool_manager.active_tasks_amount == 1
+
+        sleep(90)
+
+        assert threads_pool_manager.queue_size == 0
+        assert threads_pool_manager.active_tasks_amount == 0
+    finally:
+        threads_pool_manager.shutdown()
+        threads_pool_manager.join()
+
+
 def __get_queue_order(queue: list):
     order_str = ', '.join([task_executor.task_id for task_executor in queue])
     return f'Queue order: {order_str}'
