@@ -1,7 +1,7 @@
 [project]
 
 name='nrt-threads-utils'
-version='2.0.5'
+version='2.0.6'
 authors=[
 { name='Eyal Tuzon', email='eyal.tuzon.dev@gmail.com' }
 ]
@@ -21,6 +21,7 @@ classifiers=[
 'Programming Language :: Python :: 3.10',
 'Programming Language :: Python :: 3.11',
 'Programming Language :: Python :: 3.12',
+'Programming Language :: Python :: 3.13',
 'License :: OSI Approved :: MIT License',
 'Operating System :: OS Independent',
 ]
@@ -36,5 +37,10 @@ dynamic=['dependencies']
 [tool.setuptools]
 
 packages=['nrt_threads_utils', 'nrt_threads_utils.threads_pool_manager', 'tests.threads_pool_manager', 'tests.threads_pool_manager.performance']
+'nrt_threads_utils',
+'nrt_threads_utils.threads_pool_manager',
+'tests.threads_pool_manager',
+'tests.threads_pool_manager.performance'
+]
 
 py-modules = []

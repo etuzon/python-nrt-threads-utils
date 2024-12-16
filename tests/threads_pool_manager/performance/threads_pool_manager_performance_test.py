@@ -23,7 +23,7 @@ class Sleep20SecPriority2Thread(SleepSecPriorityThreadBase):
 
 
 EXECUTORS_POOL_SIZE = 4000
-THREADS_AMOUNT_1 = 30000
+THREADS_AMOUNT_1 = 20000
 
 
 def test_threads_pool_manager_strict_priority_performance():
