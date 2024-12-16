@@ -1,5 +1,9 @@
 # Threads Utilities
 
+## Version 2.0.6
+
+Support Python 3.13.
+
 ## Version 2.0.5
 
 Add to `ThreadPoolManager` methods to stop/start executors.
