@@ -36,7 +36,7 @@ try:
     threads_pool_manager.add_task(ThreadTask(t_4), task_id='t_4')
     threads_pool_manager.add_task(ThreadTask(t_5), task_id='t_5')
 
-    while not threads_pool_manager.is_all_executed():
+    while not threads_pool_manager.is_all_executed:
         sleep(1)
 finally:
     threads_pool_manager.shutdown()
