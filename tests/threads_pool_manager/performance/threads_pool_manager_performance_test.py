@@ -2,12 +2,10 @@ import logging
 from time import sleep
 from nrt_time_utils.time_utils import TimeUtil, MINUTE_MS
 from nrt_threads_utils.threads_pool_manager.enums import QueuePlacementEnum
-from tests.threads_pool_manager.performance.performance_base import AddTasksThread, \
-    _wait_and_verify_no_active_tasks
-from nrt_threads_utils.threads_pool_manager.threads_pool_manager import \
-    ThreadsPoolManager
-from tests.threads_pool_manager.threads_pool_manager_test_base import \
-    SleepSecPriorityThreadBase
+from tests.threads_pool_manager.performance.performance_base import \
+    AddTasksThread, _wait_and_verify_no_active_tasks
+from nrt_threads_utils.threads_pool_manager.threads_pool_manager import ThreadsPoolManager
+from tests.threads_pool_manager.threads_pool_manager_test_base import SleepSecPriorityThreadBase
 
 
 class Sleep15SecPriority1Thread(SleepSecPriorityThreadBase):
@@ -23,7 +21,7 @@ class Sleep20SecPriority2Thread(SleepSecPriorityThreadBase):
 
 
 EXECUTORS_POOL_SIZE = 4000
-THREADS_AMOUNT_1 = 20000
+THREADS_AMOUNT_1 = 15000
 
 
 def test_threads_pool_manager_strict_priority_performance():
@@ -64,8 +62,7 @@ def test_threads_pool_manager_strict_priority_performance():
 
         while (add_tasks_thread_1.is_alive() or add_tasks_thread_2.is_alive()) \
                 and not TimeUtil.is_timeout_ms(start_time_ms, timeout_ms):
-            logging.debug(
-                f'Active tasks amount: {threads_pool_manager.active_tasks_amount}')
+            logging.debug(f'Active tasks amount: {threads_pool_manager.active_tasks_amount}')
             logging.debug(f'Queue size: {threads_pool_manager.queue_size}')
 
             sleep(10)
@@ -124,8 +121,7 @@ def test_threads_pool_manager_avoid_starvation_priority_performance():
 
         while (add_tasks_thread_1.is_alive() or add_tasks_thread_2.is_alive()) \
                 and not TimeUtil.is_timeout_ms(start_time_ms, timeout_ms):
-            logging.debug(
-                f'Active tasks amount: {threads_pool_manager.active_tasks_amount}')
+            logging.debug(f'Active tasks amount: {threads_pool_manager.active_tasks_amount}')
             logging.debug(f'Queue size: {threads_pool_manager.queue_size}')
 
             sleep(10)

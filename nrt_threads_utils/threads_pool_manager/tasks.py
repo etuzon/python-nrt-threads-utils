@@ -2,11 +2,8 @@ import traceback
 from abc import abstractmethod
 from threading import Thread
 from typing import Optional
-
 from nrt_time_utils.time_utils import TimeUtil
-
-from nrt_threads_utils.threads_pool_manager.enums import \
-    TaskStateEnum, TaskTypeEnum
+from nrt_threads_utils.threads_pool_manager.enums import TaskStateEnum, TaskTypeEnum
 
 
 class TaskBase:
@@ -76,6 +73,7 @@ class MethodTask(TaskBase):
     __task: callable
     __args: tuple
     __kwargs: dict
+    __result = None
 
     def __init__(self, task: callable, *args, **kwargs):
         super().__init__()
@@ -86,10 +84,17 @@ class MethodTask(TaskBase):
 
     def execute(self):
         try:
-            self.__task(*self.__args, **self.__kwargs)
+            self.__result = self.__task(*self.__args, **self.__kwargs)
         except Exception as e:
             self._exception = e
             self._stack_trace = traceback.format_exc()
+
+    @property
+    def result(self):
+        if self.task_state != TaskStateEnum.EXECUTED:
+            raise RuntimeError(f'Method task {self.__task} not executed yet')
+
+        return self.__result
 
 
 class TaskExecutor(Thread):
