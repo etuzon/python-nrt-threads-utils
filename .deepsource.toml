@@ -8,5 +8,5 @@ exclude_patterns = [
 name = "python"
 
   [analyzers.meta]
-  max_line_length = 90
+  max_line_length = 100
   runtime_version = "3.x.x"
