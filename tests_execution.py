@@ -9,6 +9,7 @@ PATH = os.path.dirname(__file__)
 
 
 def __replace_pyproject_packages():
+
     packages = find_packages()
     packages.remove('tests')
 
@@ -32,6 +33,7 @@ def __replace_pyproject_packages():
 
 
 def __replace_pyproject_version():
+
     with open(os.path.join(PATH, 'pyproject.toml')) as f:
         file_lines = [line.strip() for line in f.readlines()]
 

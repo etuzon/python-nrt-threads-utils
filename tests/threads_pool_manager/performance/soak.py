@@ -4,12 +4,10 @@ from time import sleep
 from nrt_time_utils.time_utils import MINUTE_MS, TimeUtil
 
 from nrt_threads_utils.threads_pool_manager.enums import QueuePlacementEnum
-from nrt_threads_utils.threads_pool_manager.threads_pool_manager import \
-    ThreadsPoolManager
+from nrt_threads_utils.threads_pool_manager.threads_pool_manager import ThreadsPoolManager
 from tests.threads_pool_manager.performance.performance_base import \
     AddTasksThread, _wait_and_verify_no_active_tasks
-from tests.threads_pool_manager.threads_pool_manager_test_base import \
-    SleepSecPriorityThreadBase
+from tests.threads_pool_manager.threads_pool_manager_test_base import SleepSecPriorityThreadBase
 
 
 class Sleep600SecPriority1Thread(SleepSecPriorityThreadBase):
@@ -80,11 +78,9 @@ try:
 
         logging.info('Waiting for 10 minutes')
 
-        while not TimeUtil.is_timeout_ms(
-                start_time_ms, WAIT_AFTER_T1_AND_T2_STARTED_MS):
+        while not TimeUtil.is_timeout_ms(start_time_ms, WAIT_AFTER_T1_AND_T2_STARTED_MS):
 
-            logging.debug(
-                f'Active tasks amount: {threads_pool_manager.active_tasks_amount}')
+            logging.debug(f'Active tasks amount: {threads_pool_manager.active_tasks_amount}')
             logging.debug(f'Queue size: {threads_pool_manager.queue_size}')
 
             sleep(10)
@@ -110,17 +106,14 @@ try:
         start_time_ms = TimeUtil.get_current_date_ms()
 
         while (add_tasks_thread_1.is_alive() or add_tasks_thread_2.is_alive()) \
-                and not TimeUtil.is_timeout_ms(
-                    start_time_ms, WAIT_ALL_THREADS_FINISHED_MS):
+                and not TimeUtil.is_timeout_ms(start_time_ms, WAIT_ALL_THREADS_FINISHED_MS):
 
-            logging.debug(
-                f'Active tasks amount: {threads_pool_manager.active_tasks_amount}')
+            logging.debug(f'Active tasks amount: {threads_pool_manager.active_tasks_amount}')
             logging.debug(f'Queue size: {threads_pool_manager.queue_size}')
 
             sleep(10)
 
-        _wait_and_verify_no_active_tasks(
-            WAIT_ALL_TASKS_FINISHED_MS, threads_pool_manager)
+        _wait_and_verify_no_active_tasks(WAIT_ALL_TASKS_FINISHED_MS, threads_pool_manager)
 finally:
     threads_pool_manager.shutdown()
     threads_pool_manager.join()

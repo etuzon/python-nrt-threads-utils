@@ -1,5 +1,14 @@
 # Threads Utilities
 
+## Version 2.1.0
+
+ - Add is_all_executed method to ThreadPoolManager.
+ - Add results method to MethodTask.
+
+## Version 2.0.7
+
+Fix pyproject.toml.
+
 ## Version 2.0.6
 
 Support Python 3.13.

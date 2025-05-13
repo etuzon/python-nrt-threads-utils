@@ -10,8 +10,7 @@ from nrt_threads_utils.threads_pool_manager.threads_pool_manager import \
     ThreadsPoolManager
 
 
-def _wait_and_verify_no_active_tasks(
-        timeout_ms: int, threads_pool_manager:  ThreadsPoolManager):
+def _wait_and_verify_no_active_tasks(timeout_ms: int, threads_pool_manager: ThreadsPoolManager):
 
     is_finished = False
 
@@ -21,14 +20,12 @@ def _wait_and_verify_no_active_tasks(
         if threads_pool_manager.active_tasks_amount == 0:
             is_finished = True
 
-        logging.debug(
-            f'Active tasks amount: {threads_pool_manager.active_tasks_amount}')
+        logging.debug(f'Active tasks amount: {threads_pool_manager.active_tasks_amount}')
         logging.debug(f'Queue size: {threads_pool_manager.queue_size}')
 
         sleep(10)
 
-    assert is_finished, \
-           f'Active tasks amount is {threads_pool_manager.active_tasks_amount}'
+    assert is_finished, f'Active tasks amount is {threads_pool_manager.active_tasks_amount}'
     assert threads_pool_manager.queue_size == 0
 
 
@@ -77,9 +74,7 @@ class AddTasksThread(Thread):
 
     @classmethod
     def __verify_in_adding_tasks_loop(
-            cls,
-            task_id: str,
-            threads_pool_manager: ThreadsPoolManager):
+            cls, task_id: str, threads_pool_manager: ThreadsPoolManager):
 
         assert threads_pool_manager.queue_size >= 0
         assert threads_pool_manager.get_task(task_id=task_id), f'{task_id} not found'
@@ -89,3 +84,4 @@ class AddTasksThread(Thread):
         assert threads_pool_manager.finished_tasks is not None
         assert threads_pool_manager.metrics is not None
         assert threads_pool_manager.active_tasks_amount >= 0
+        assert not threads_pool_manager.is_all_executed

@@ -22,9 +22,9 @@ setup(
     author='Eyal Tuzon',
     author_email='eyal.tuzon.dev@gmail.com',
     description='Threads utilities for Python',
-    keywords='python python3 python-3 tool tools thread threads pool thread-pool'
-             ' util nrt nrt-utils nrt-utilities threads-utils threads-utilities'
-             ' nrt-utilities nrt-thread-utils nrt-threads-utilities',
+    keywords='python python3 python-3 tool tools thread threads pool thread-pool util nrt nrt-utils'
+             ' nrt-utilities threads-utils threads-utilities nrt-utilities nrt-thread-utils'
+             ' nrt-threads-utilities',
     long_description_content_type='text/markdown',
     long_description=readme,
     url='https://github.com/etuzon/python-nrt-threads-utils',

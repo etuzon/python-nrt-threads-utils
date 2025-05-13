@@ -1,18 +1,18 @@
 import pytest
 from time import sleep
 from nrt_time_utils.time_utils import TimeUtil, MINUTE_MS, SECOND_MS
-from nrt_threads_utils.threads_pool_manager.enums import \
-    QueuePlacementEnum, TaskStateEnum
+from nrt_threads_utils.threads_pool_manager.enums import QueuePlacementEnum, TaskStateEnum
 from nrt_threads_utils.threads_pool_manager.threads_pool_manager_exceptions import \
     FullQueueException
 from nrt_threads_utils.threads_pool_manager.tasks import ThreadTask, MethodTask
-from nrt_threads_utils.threads_pool_manager.threads_pool_manager import \
-    ThreadsPoolManager
-from tests.threads_pool_manager.threads_pool_manager_test_base import \
-    SleepSecPriorityThreadBase
+from nrt_threads_utils.threads_pool_manager.threads_pool_manager import ThreadsPoolManager
+from tests.threads_pool_manager.threads_pool_manager_test_base import SleepSecPriorityThreadBase
 
 
 SLEEP_10 = 10
+
+SLEEP_RESULT_1 = 'Sleep result 1'
+SLEEP_RESULT_2 = 'Sleep result 2'
 
 
 def sleep_x_and_y_sec(x: int, y: int):
@@ -22,6 +22,7 @@ def sleep_x_and_y_sec(x: int, y: int):
 
 def sleep_10_sec():
     sleep(SLEEP_10)
+    return SLEEP_RESULT_1, SLEEP_RESULT_2
 
 
 def sleep_1_sec_and_raise_value_error():
@@ -66,9 +67,53 @@ def test_name():
     assert threads_pool_manager.name == 'test'
 
 
+def test_method_task_result():
+    threads_pool_manager = ThreadsPoolManager()
+
+    try:
+        threads_pool_manager.start()
+
+        assert threads_pool_manager.is_all_executed
+
+        mt = MethodTask(sleep_10_sec)
+
+        threads_pool_manager.add_task(mt)
+
+        assert not threads_pool_manager.is_all_executed
+
+        sleep(11)
+
+        result_1, result_2 = mt.result
+
+        assert result_1 == SLEEP_RESULT_1
+        assert result_2 == SLEEP_RESULT_2
+
+        assert threads_pool_manager.is_all_executed
+    finally:
+        threads_pool_manager.shutdown()
+        threads_pool_manager.join()
+
+
+def test_method_task_not_finished_result_raise_exception():
+    threads_pool_manager = ThreadsPoolManager()
+
+    try:
+        threads_pool_manager.start()
+
+        mt = MethodTask(sleep_10_sec)
+
+        threads_pool_manager.add_task(mt)
+
+        with pytest.raises(RuntimeError):
+            _, _ = mt.result
+    finally:
+        threads_pool_manager.shutdown()
+        threads_pool_manager.join()
+
+
 def test_threads_and_pool_size_is_1():
-    threads_pool_manager = \
-        ThreadsPoolManager(executors_pool_size=1)
+
+    threads_pool_manager = ThreadsPoolManager(executors_pool_size=1)
 
     try:
         threads_pool_manager.start()
@@ -92,9 +137,7 @@ def test_threads_and_pool_size_is_1():
         __verify_pool_size_is_1(threads_pool_manager)
 
         assert threads_pool_manager.metrics.max_queue_size == 1
-        assert 12 * SECOND_MS \
-               > threads_pool_manager.metrics.max_execution_date_ms \
-               > 10 * SECOND_MS
+        assert 12 * SECOND_MS > threads_pool_manager.metrics.max_execution_date_ms > 10 * SECOND_MS
         assert threads_pool_manager.metrics.executed_tasks_counter == 2
         assert threads_pool_manager.metrics.executed_threads_counter == 2
         assert threads_pool_manager.metrics.executed_methods_counter == 0
@@ -107,8 +150,8 @@ def test_threads_and_pool_size_is_1():
 
 
 def test_threads_and_pool_size_is_2():
-    threads_pool_manager = \
-        ThreadsPoolManager(executors_pool_size=2)
+
+    threads_pool_manager = ThreadsPoolManager(executors_pool_size=2)
 
     try:
         threads_pool_manager.start()
@@ -126,9 +169,7 @@ def test_threads_and_pool_size_is_2():
         __verify_pool_size_is_2(threads_pool_manager)
 
         assert threads_pool_manager.metrics.max_queue_size == 1
-        assert 12 * SECOND_MS \
-               > threads_pool_manager.metrics.max_execution_date_ms \
-               > 10 * SECOND_MS
+        assert 12 * SECOND_MS > threads_pool_manager.metrics.max_execution_date_ms > 10 * SECOND_MS
         assert threads_pool_manager.metrics.executed_tasks_counter == 3
         assert threads_pool_manager.metrics.executed_threads_counter == 3
         assert threads_pool_manager.metrics.executed_methods_counter == 0
@@ -141,8 +182,8 @@ def test_threads_and_pool_size_is_2():
 
 
 def test_method_without_args_and_pool_size_is_1():
-    threads_pool_manager = \
-        ThreadsPoolManager(executors_pool_size=1)
+
+    threads_pool_manager = ThreadsPoolManager(executors_pool_size=1)
 
     try:
         threads_pool_manager.start()
@@ -154,9 +195,7 @@ def test_method_without_args_and_pool_size_is_1():
         __verify_pool_size_is_1(threads_pool_manager)
 
         assert threads_pool_manager.metrics.max_queue_size == 1
-        assert 12 * SECOND_MS \
-               > threads_pool_manager.metrics.max_execution_date_ms \
-               > 10 * SECOND_MS
+        assert 12 * SECOND_MS > threads_pool_manager.metrics.max_execution_date_ms > 10 * SECOND_MS
         assert threads_pool_manager.metrics.executed_tasks_counter == 2
         assert threads_pool_manager.metrics.executed_threads_counter == 0
         assert threads_pool_manager.metrics.executed_methods_counter == 2
@@ -169,8 +208,8 @@ def test_method_without_args_and_pool_size_is_1():
 
 
 def test_method_without_args_and_pool_size_is_2():
-    threads_pool_manager = \
-        ThreadsPoolManager(executors_pool_size=2)
+
+    threads_pool_manager = ThreadsPoolManager(executors_pool_size=2)
 
     try:
         threads_pool_manager.start()
@@ -187,8 +226,8 @@ def test_method_without_args_and_pool_size_is_2():
 
 
 def test_method_with_args_and_pool_size_is_1():
-    threads_pool_manager = \
-        ThreadsPoolManager(executors_pool_size=1)
+
+    threads_pool_manager = ThreadsPoolManager(executors_pool_size=1)
 
     try:
         threads_pool_manager.start()
@@ -204,8 +243,8 @@ def test_method_with_args_and_pool_size_is_1():
 
 
 def test_strict_priority():
-    threads_pool_manager = \
-        ThreadsPoolManager(executors_pool_size=1)
+
+    threads_pool_manager = ThreadsPoolManager(executors_pool_size=1)
 
     try:
         threads_pool_manager.start()
@@ -218,13 +257,14 @@ def test_strict_priority():
 
         sleep(5)
 
-        assert threads_pool_manager.queue_size == 1, \
-            f'Queue size: {threads_pool_manager.queue_size}'
+        assert \
+            threads_pool_manager.queue_size == 1, f'Queue size: {threads_pool_manager.queue_size}'
 
         queue = threads_pool_manager.queue
 
         assert len(queue) == 1, f'Queue: {queue}'
         assert queue[0].task.task_instance.priority == 1
+
     finally:
         threads_pool_manager.shutdown()
         threads_pool_manager.join()
@@ -246,8 +286,7 @@ def test_avoid_starvation_priority():
     :return:
     """
 
-    threads_pool_manager = \
-        ThreadsPoolManager(executors_pool_size=1)
+    threads_pool_manager = ThreadsPoolManager(executors_pool_size=1)
 
     threads_pool_manager.avoid_starvation_amount = 2
 
@@ -303,7 +342,7 @@ def test_avoid_starvation_priority():
         sleep(5)
 
         assert threads_pool_manager.queue_size == 6, \
-            f'Queue size: {threads_pool_manager.queue_size}'
+               f'Queue size: {threads_pool_manager.queue_size}'
 
         queue = threads_pool_manager.queue
 
@@ -357,10 +396,8 @@ def test_avoid_starvation_priority():
         assert not threads_pool_manager.is_task_exists('t_1')
 
         assert threads_pool_manager.metrics.avoid_starvation_counter == 1
-        assert threads_pool_manager.metrics.tasks_priority_counter_dict == \
-               {1: 2, 2: 4, 3: 2}
-        assert threads_pool_manager.metrics.thread_tasks_counter_dict == \
-               {1: 2, 2: 4, 3: 2}
+        assert threads_pool_manager.metrics.tasks_priority_counter_dict == {1: 2, 2: 4, 3: 2}
+        assert threads_pool_manager.metrics.thread_tasks_counter_dict == {1: 2, 2: 4, 3: 2}
         assert threads_pool_manager.metrics.method_tasks_counter_dict == {}
         assert threads_pool_manager.metrics.executed_tasks_counter == 8
         assert threads_pool_manager.metrics.executed_threads_counter == 8
@@ -384,8 +421,8 @@ def test_avoid_starvation_priority():
 
 
 def test_task_base_properties():
-    threads_pool_manager = \
-        ThreadsPoolManager(executors_pool_size=1)
+
+    threads_pool_manager = ThreadsPoolManager(executors_pool_size=1)
 
     try:
         threads_pool_manager.start()
@@ -427,8 +464,8 @@ def test_task_base_properties():
 
 
 def test_max_queue_size():
-    threads_pool_manager = \
-        ThreadsPoolManager(executors_pool_size=1)
+
+    threads_pool_manager = ThreadsPoolManager(executors_pool_size=1)
 
     try:
         threads_pool_manager.start()
@@ -441,6 +478,8 @@ def test_max_queue_size():
 
         threads_pool_manager.add_task(ThreadTask(t_1), task_id='t_1')
 
+        assert not threads_pool_manager.is_all_executed
+
         sleep(2)
 
         threads_pool_manager.add_task(ThreadTask(t_2), task_id='t_2')
@@ -450,8 +489,8 @@ def test_max_queue_size():
 
         sleep(5)
 
-        assert threads_pool_manager.queue_size == 1, \
-            f'Queue size: {threads_pool_manager.queue_size}'
+        assert \
+            threads_pool_manager.queue_size == 1, f'Queue size: {threads_pool_manager.queue_size}'
 
         queue = threads_pool_manager.queue
 
@@ -468,8 +507,8 @@ def test_max_queue_size():
 
 
 def test_executors_extension():
-    threads_pool_manager = \
-        ThreadsPoolManager(executors_pool_size=2)
+
+    threads_pool_manager = ThreadsPoolManager(executors_pool_size=2)
 
     threads_pool_manager.max_executors_extension_pool_size = 2
     threads_pool_manager.executors_timeout_ms = 10 * SECOND_MS
@@ -493,8 +532,8 @@ def test_executors_extension():
 
         sleep(5)
 
-        assert threads_pool_manager.queue_size == 3, \
-            f'Queue size: {threads_pool_manager.queue_size}'
+        assert \
+            threads_pool_manager.queue_size == 3, f'Queue size: {threads_pool_manager.queue_size}'
 
         assert threads_pool_manager.max_executors_pool_size == 2
         assert threads_pool_manager.executors_extension_pool_size == 0
@@ -502,8 +541,8 @@ def test_executors_extension():
 
         sleep_10_sec()
 
-        assert threads_pool_manager.queue_size == 1, \
-            f'Queue size: {threads_pool_manager.queue_size}'
+        assert \
+            threads_pool_manager.queue_size == 1, f'Queue size: {threads_pool_manager.queue_size}'
 
         assert threads_pool_manager.max_executors_pool_size == 2
         assert threads_pool_manager.executors_extension_pool_size == 2
@@ -511,8 +550,8 @@ def test_executors_extension():
 
         sleep_11_sec()
 
-        assert threads_pool_manager.queue_size == 0, \
-            f'Queue size: {threads_pool_manager.queue_size}'
+        assert \
+            threads_pool_manager.queue_size == 0, f'Queue size: {threads_pool_manager.queue_size}'
 
         assert threads_pool_manager.max_executors_pool_size == 2
         assert threads_pool_manager.executors_extension_pool_size == 1
@@ -520,8 +559,8 @@ def test_executors_extension():
 
         sleep_11_sec()
 
-        assert threads_pool_manager.queue_size == 0, \
-            f'Queue size: {threads_pool_manager.queue_size}'
+        assert \
+            threads_pool_manager.queue_size == 0, f'Queue size: {threads_pool_manager.queue_size}'
 
         assert threads_pool_manager.executors_extension_pool_size == 0
         assert threads_pool_manager.active_tasks_amount == 0
@@ -535,8 +574,8 @@ def test_executors_extension():
 
 
 def test_method_raise_exception():
-    threads_pool_manager = \
-        ThreadsPoolManager(executors_pool_size=1)
+
+    threads_pool_manager = ThreadsPoolManager(executors_pool_size=1)
 
     try:
         threads_pool_manager.start()
@@ -552,9 +591,7 @@ def test_method_raise_exception():
         assert threads_pool_manager.metrics.executed_methods_counter == 1
         assert threads_pool_manager.metrics.tasks_priority_counter_dict == {1: 1}
         assert threads_pool_manager.metrics.max_queue_size == 1
-        assert SECOND_MS \
-               < threads_pool_manager.metrics.max_execution_date_ms \
-               < 2 * SECOND_MS
+        assert SECOND_MS < threads_pool_manager.metrics.max_execution_date_ms < 2 * SECOND_MS
         finished_tasks = threads_pool_manager.finished_tasks
         assert len(finished_tasks) > 0
         finished_task = finished_tasks[0]
@@ -572,16 +609,14 @@ def __verify_pool_size_is_1(threads_pool_manager: ThreadsPoolManager):
 
     sleep(5)
 
-    assert threads_pool_manager.queue_size == 1, \
-           f'Queue size: {threads_pool_manager.queue_size}'
+    assert threads_pool_manager.queue_size == 1, f'Queue size: {threads_pool_manager.queue_size}'
     assert threads_pool_manager.max_executors_pool_size == 1, \
            f'Executors pool size: {threads_pool_manager.max_executors_pool_size}'
     assert threads_pool_manager.active_tasks_amount == 1, \
            f'Active tasks amount: {threads_pool_manager.active_tasks_amount}'
     sleep(SLEEP_10)
 
-    assert threads_pool_manager.queue_size == 0, \
-           f'Queue size: {threads_pool_manager.queue_size}'
+    assert threads_pool_manager.queue_size == 0, f'Queue size: {threads_pool_manager.queue_size}'
     assert threads_pool_manager.max_executors_pool_size == 1, \
            f'Executors pool size: {threads_pool_manager.max_executors_pool_size}'
     assert threads_pool_manager.active_tasks_amount == 1, \
@@ -589,8 +624,7 @@ def __verify_pool_size_is_1(threads_pool_manager: ThreadsPoolManager):
 
     sleep(SLEEP_10)
 
-    assert threads_pool_manager.queue_size == 0, \
-           f'Queue size: {threads_pool_manager.queue_size}'
+    assert threads_pool_manager.queue_size == 0, f'Queue size: {threads_pool_manager.queue_size}'
     assert threads_pool_manager.max_executors_pool_size == 1, \
            f'Executors pool size: {threads_pool_manager.max_executors_pool_size}'
     assert threads_pool_manager.active_tasks_amount == 0, \
@@ -603,8 +637,7 @@ def __verify_pool_size_is_2(threads_pool_manager: ThreadsPoolManager):
 
     sleep(5)
 
-    assert threads_pool_manager.queue_size == 1, \
-           f'Queue size: {threads_pool_manager.queue_size}'
+    assert threads_pool_manager.queue_size == 1, f'Queue size: {threads_pool_manager.queue_size}'
     assert threads_pool_manager.max_executors_pool_size == 2, \
            f'Executors pool size: {threads_pool_manager.max_executors_pool_size}'
     assert threads_pool_manager.active_tasks_amount == 2, \
@@ -612,8 +645,7 @@ def __verify_pool_size_is_2(threads_pool_manager: ThreadsPoolManager):
 
     sleep(SLEEP_10)
 
-    assert threads_pool_manager.queue_size == 0, \
-           f'Queue size: {threads_pool_manager.queue_size}'
+    assert threads_pool_manager.queue_size == 0, f'Queue size: {threads_pool_manager.queue_size}'
     assert threads_pool_manager.max_executors_pool_size == 2, \
            f'Executors pool size: {threads_pool_manager.max_executors_pool_size}'
     assert threads_pool_manager.active_tasks_amount == 1, \
@@ -621,8 +653,7 @@ def __verify_pool_size_is_2(threads_pool_manager: ThreadsPoolManager):
 
     sleep(SLEEP_10)
 
-    assert threads_pool_manager.queue_size == 0, \
-           f'Queue size: {threads_pool_manager.queue_size}'
+    assert threads_pool_manager.queue_size == 0, f'Queue size: {threads_pool_manager.queue_size}'
     assert threads_pool_manager.max_executors_pool_size == 2, \
            f'Executors pool size: {threads_pool_manager.max_executors_pool_size}'
     assert threads_pool_manager.active_tasks_amount == 0, \
@@ -630,14 +661,13 @@ def __verify_pool_size_is_2(threads_pool_manager: ThreadsPoolManager):
 
 
 def test_shutdown_and_start_executors():
-    threads_pool_manager = \
-        ThreadsPoolManager(executors_pool_size=1)
+
+    threads_pool_manager = ThreadsPoolManager(executors_pool_size=1)
 
     try:
         threads_pool_manager.start()
 
         assert not threads_pool_manager.is_executors_shutdown
-
 
         t_1 = Sleep30SecPriority1Thread()
         t_2 = Sleep30SecPriority1Thread()
@@ -687,6 +717,7 @@ def test_shutdown_and_start_executors():
 
         assert threads_pool_manager.queue_size == 0
         assert threads_pool_manager.active_tasks_amount == 0
+
     finally:
         threads_pool_manager.shutdown()
         threads_pool_manager.join()

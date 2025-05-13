@@ -1,12 +1,10 @@
 import copy
 from threading import Lock, Thread
 from typing import Optional
-
 from time import sleep
 from nrt_collections_utils.list_utils import ListUtil
-
-from nrt_threads_utils.threads_pool_manager.enums import TaskStateEnum, \
-    QueuePlacementEnum, TaskTypeEnum
+from nrt_threads_utils.threads_pool_manager.enums import \
+    TaskStateEnum, QueuePlacementEnum, TaskTypeEnum
 from nrt_threads_utils.threads_pool_manager.threads_pool_manager_exceptions import \
     FullQueueException
 from nrt_threads_utils.threads_pool_manager.metrics import ThreadsPoolManagerMetrics
@@ -168,6 +166,11 @@ class ThreadsPoolManager(Thread):
             return finished_tasks
 
     @property
+    def is_all_executed(self):
+        with self.__threads_lock:
+            return not (self.__executors_pool or self.__queue or self.__temp_tasks_ids)
+
+    @property
     def is_executors_shutdown(self) -> bool:
         return self.__is_executors_shutdown
 
@@ -249,7 +252,8 @@ class ThreadsPoolManager(Thread):
     def __increase_executors_extension_pool_size(self):
         if self.executors_extension_pool_size < self.max_executors_extension_pool_size \
                 and len(self.__executors_pool) >= self.max_executors_pool_size \
-                and self.__is_executor_timeout() and self.queue_size:
+                and self.__is_executor_timeout() \
+                and self.queue_size:
 
             self.__executors_extension_pool_size += 1
 
@@ -268,8 +272,7 @@ class ThreadsPoolManager(Thread):
             if not self.__executors_pool[i].is_alive():
 
                 self.__update_executed_tasks_counter_metrics(
-                    self.__executors_pool[i].priority,
-                    self.__executors_pool[i].task_type)
+                    self.__executors_pool[i].priority, self.__executors_pool[i].task_type)
 
                 self.__executors_pool[i].task.task_state = TaskStateEnum.EXECUTED
                 self.__add_task_executor_to_finished_tasks(self.__executors_pool[i])
@@ -306,8 +309,7 @@ class ThreadsPoolManager(Thread):
 
         return None
 
-    def __add_task_strict_queue_placement(
-            self, task: TaskExecutor, start_index: int = 0) -> int:
+    def __add_task_strict_queue_placement(self, task: TaskExecutor, start_index: int = 0) -> int:
 
         for i, te in enumerate(self.__queue[start_index:], start=start_index):
             if te.priority < task.priority:
@@ -324,8 +326,7 @@ class ThreadsPoolManager(Thread):
         else:
             self.__add_task_avoid_starvation_counter_gt_than_amount(task_executor)
 
-    def __add_task_avoid_starvation_counter_gt_than_amount(
-            self, task_executor: TaskExecutor):
+    def __add_task_avoid_starvation_counter_gt_than_amount(self, task_executor: TaskExecutor):
 
         avoid_starvation_task_index = self.avoid_starvation_task_index
 
@@ -339,8 +340,7 @@ class ThreadsPoolManager(Thread):
         if index != -1:
             self.__avoid_starvation_counter += 1
 
-    def __add_task_avoid_starvation_counter_equal_to_amount(
-            self, task_executor: TaskExecutor):
+    def __add_task_avoid_starvation_counter_equal_to_amount(self, task_executor: TaskExecutor):
 
         task_executor.avoid_starvation_flag = True
         self.__update_avoid_starvation_counter_metrics()
@@ -351,16 +351,14 @@ class ThreadsPoolManager(Thread):
         with self.__metrics_lock:
             for te in self.__executors_pool:
                 if te and te.task.alive_date_ms > self.__metrics.max_execution_date_ms:
-                    self.__metrics.max_execution_date_ms = \
-                        te.task.alive_date_ms
+                    self.__metrics.max_execution_date_ms = te.task.alive_date_ms
 
     def __update_max_queue_size_metrics(self):
         with self.__metrics_lock:
             if self.queue_size > self.__metrics.max_queue_size:
                 self.__metrics.max_queue_size = len(self.__queue)
 
-    def __update_executed_tasks_counter_metrics(
-            self, priority: int, task_type: TaskTypeEnum):
+    def __update_executed_tasks_counter_metrics(self, priority: int, task_type: TaskTypeEnum):
 
         with self.__metrics_lock:
             self.__metrics.executed_tasks_counter += 1

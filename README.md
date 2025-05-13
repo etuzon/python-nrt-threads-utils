@@ -49,6 +49,7 @@ when the pool is full and at least one task executor run more than `executors_ti
 | `executors_timeout_ms`              | Returns Executors Timeout in milliseconds.                                        | `@propery`                                                                                                                                                                                                                                                                                | `int` Executors Timeout in milliseconds.                                                |
 | `executors_timeout_ms`              | Sets Executors Timeout in milliseconds.                                           | `@setter` Executors Timeout in milliseconds.                                                                                                                                                                                                                                              | `None`                                                                                  |
 | `finished_tasks`                    | Returns finished tasks.<br>Finished tasks list will be truncated after each call. | `@propery`                                                                                                                                                                                                                                                                                | `List[ThreadTask \| MethodTask]` Finished tasks.                                        |
+| `is_all_executed`                   | Returns True if all tasks are executed.                                           | `@propery`                                                                                                                                                                                                                                                                                | `bool` True if all tasks are executed, otherwise False.                                 | 
 | `is_executors_shutdown`             | Returns True if executors pool is shutdown.                                       | `@propery`                                                                                                                                                                                                                                                                                | `bool`                                                                                  |
 | `max_executors_extension_pool_size` | Returns Max Executors Extension Pool Size.                                        | `@propery`                                                                                                                                                                                                                                                                                | `int` Max Executors Extension Pool Size.                                                |
 | `max_executors_extension_pool_size` | Sets Max Executors Extension Pool Size.                                           | `@setter` Max Executors Extension Pool Size.                                                                                                                                                                                                                                              | `None`                                                                                  |
@@ -104,9 +105,10 @@ Task that runs a method.
 
 | **Method**      | **Description**                             | **Parameters** | **Returns**                  |
 |-----------------|---------------------------------------------|----------------|------------------------------|
-| `execute`   -   | Executes the task.                          | `None`         | `None`                       |
+| `execute`       | Executes the task.                          | `None`         | `None`                       |
 | `alive_date_ms` | Returns task alive date ms.                 | `@propery`     | `int` Alive date in ms.      |
 | `exception`     | Returns Exception, if it happened.          | `@propery`     | `Exception`                  |
+| `result`        | Returns task result.                        | `@propery`     | `Any` Task result.           |
 | `stack_trace`   | Returns stack trace, if exception happened. | `@propery`     | `str` Exception stack trace. |
 | `start_date_ms` | Returns task start date ms.                 | `@propery`     | `int` Start date in ms.      |
 | `start_date_ms` | Sets task start date ms.                    | `@setter`      | `None`                       |
@@ -291,6 +293,7 @@ Queue placement enum.
     
     def sleep_10_sec():
         sleep(10)
+        return 'a', 'b'
     
     
     threads_pool_manager = \
@@ -298,11 +301,15 @@ Queue placement enum.
     
         try:
             threads_pool_manager.start()
-    
-            threads_pool_manager.add_task(MethodTask(sleep_10_sec), priority=1)
+            
+            mt_1 = MethodTask(sleep_10_sec)
+            mt_2 = MethodTask(sleep_10_sec)
+            mt_3 = MethodTask(sleep_10_sec)
+  
+            threads_pool_manager.add_task(mt_1, priority=1)
             sleep(0.2)
-            threads_pool_manager.add_task(MethodTask(sleep_10_sec), priority=2)
-            threads_pool_manager.add_task(MethodTask(sleep_10_sec), priority=2)
+            threads_pool_manager.add_task(mt_2, priority=2)
+            threads_pool_manager.add_task(mt_3, priority=2)
     
             metrics = threads_pool_manager.metrics
             print(f'Max queue size: {metrics.max_queue_size}')
@@ -312,6 +319,13 @@ Queue placement enum.
             print(f'Executed methods counter: {metrics.executed_methods_counter}')
             print(f'Avoid starvation counter: {metrics.avoid_starvation_counter}')
             print(f'Tasks priority counter dict {metrics.tasks_priority_counter_dict}')
+            
+            sleep(12)
+  
+            a, b = mt_1.result
+  
+            print('Result 1: ' + a)
+            print('Result 2: ' + b)
         finally:
             threads_pool_manager.shutdown()
             threads_pool_manager.join()
@@ -327,4 +341,6 @@ Queue placement enum.
     Executed methods counter: 3
     Avoid starvation counter: 0
     Tasks priority counter dict {1: 1, 2: 2}
+    Result 1: a
+    Result 2: b
     ```
