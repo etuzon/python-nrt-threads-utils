@@ -5,6 +5,11 @@ version='2.1.0'
 authors=[
     { name='Eyal Tuzon', email='eyal.tuzon.dev@gmail.com' }
 ]
+
+license-files=[
+    'LICENSE.md'
+]
+
 description='Threads utilities in Python'
 keywords=[
     'python', 'python3', 'python-3', 'tool', 'tools', 'thread', 'threads', 'pool', 'threads-pool',
@@ -21,7 +26,6 @@ classifiers=[
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
-    'License :: OSI Approved :: MIT License',
     'Operating System :: OS Independent'
 ]
 
@@ -37,17 +41,14 @@ dynamic=['dependencies']
 
 packages=[
     'nrt_threads_utils',
-    'nrt_threads_utils.threads_pool_manager',
-    'tests.threads_pool_manager',
-    'tests.threads_pool_manager.performance',
-    'nrt_threads_utils',
-    'nrt_threads_utils.threads_pool_manager',
-    'tests.threads_pool_manager',
-    'tests.threads_pool_manager.performance',
-    'nrt_threads_utils',
-    'nrt_threads_utils.threads_pool_manager',
-    'tests.threads_pool_manager',
-    'tests.threads_pool_manager.performance'
+    'nrt_threads_utils.threads_pool_manager'
 ]
 
-py-modules = []
+py-modules=[]
+
+[build-system]
+requires=[
+    'setuptools>=80.4.0',
+    'wheel>=0.46.1',
+    'twine>=6.1.0'
+]

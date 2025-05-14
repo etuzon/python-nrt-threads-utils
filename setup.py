@@ -3,7 +3,9 @@ from setuptools import setup, find_packages
 
 import nrt_threads_utils
 
+
 PATH = os.path.dirname(__file__)
+
 
 with open(os.path.join(PATH, 'requirements.txt')) as f:
     requirements = f.read().splitlines()
@@ -37,8 +39,7 @@ setup(
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.13',
-        'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent',
+        'Operating System :: OS Independent'
     ],
     install_requires=[requirements],
     data_files=[('', ['requirements.txt'])],
