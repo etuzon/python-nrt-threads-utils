@@ -140,7 +140,7 @@ class TaskExecutor(Thread):
         return self.__priority
 
     @property
-    def task(self) -> TaskBase:
+    def task(self) -> [MethodTask, ThreadTask]:
         return self.__task
 
     @property

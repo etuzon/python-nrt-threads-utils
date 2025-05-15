@@ -1,5 +1,8 @@
 # Threads Utilities
 
+## Version 2.1.1
+- Fix minor bug.
+
 ## Version 2.1.0
 
  - Add is_all_executed method to ThreadPoolManager.
