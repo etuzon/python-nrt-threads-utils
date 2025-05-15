@@ -2,7 +2,7 @@
     "meta": {
         "format": 2,
         "version": "7.5.3",
-        "timestamp": "2025-05-13T10:50:23.740792",
+        "timestamp": "2025-05-15T09:27:38.585853",
         "branch_coverage": true,
         "show_contexts": false
     },
@@ -1287,8 +1287,8 @@
         },
         "nrt_threads_utils\\threads_pool_manager\\threads_pool_manager_exceptions.py": {
             "executed_lines": [
-                3,
-                4
+                2,
+                3
             ],
             "summary": {
                 "covered_lines": 2,
