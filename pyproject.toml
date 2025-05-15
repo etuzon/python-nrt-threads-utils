@@ -8,7 +8,7 @@ authors=[
 
 description='Threads utilities in Python'
 
-license='MIT'
+license-files=['LICENSE']
 
 keywords=[
 'python', 'python3', 'python-3', 'tool', 'tools', 'thread', 'threads', 'pool', 'threads-pool',
@@ -38,16 +38,9 @@ dynamic=['dependencies']
 
 [tool.setuptools]
 
-packages=['nrt_threads_utils', 'nrt_threads_utils.threads_pool_manager', 'tests.threads_pool_manager', 'tests.threads_pool_manager.performance']
-'nrt_threads_utils',
-'nrt_threads_utils.threads_pool_manager'
+packages=[
+    'nrt_threads_utils',
+    'nrt_threads_utils.threads_pool_manager',
 ]
 
 py-modules=[]
-
-[build-system]
-requires=[
-'setuptools>=80.4.0',
-'wheel>=0.46.1',
-'twine>=6.1.0'
-]
