@@ -3,7 +3,7 @@
 name='nrt-threads-utils'
 version='2.1.2'
 authors=[
-{ name='Eyal Tuzon', email='eyal.tuzon.dev@gmail.com' }
+    { name='Eyal Tuzon', email='eyal.tuzon.dev@gmail.com' }
 ]
 
 description='Threads utilities in Python'
@@ -40,9 +40,10 @@ dynamic=['dependencies']
 
 [tool.setuptools]
 
-packages=['nrt_threads_utils', 'nrt_threads_utils.threads_pool_manager', 'tests.threads_pool_manager', 'tests.threads_pool_manager.performance']
-'nrt_threads_utils',
-'nrt_threads_utils.threads_pool_manager',
+packages=[
+    'nrt_threads_utils', 'nrt_threads_utils.threads_pool_manager',
+    'tests.threads_pool_manager', 'tests.threads_pool_manager.performance',
+    'nrt_threads_utils', 'nrt_threads_utils.threads_pool_manager'
 ]
 
 py-modules=[]
